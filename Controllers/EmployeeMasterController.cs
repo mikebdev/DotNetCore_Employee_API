@@ -1,5 +1,6 @@
 ﻿using Employee.API.Data;
 using Employee.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -222,12 +223,17 @@ namespace Employee.API.Controllers
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost("login")]
+        //[AllowAnonymous] //JWT, Oauth, OpenConnect can be implemented later for security. For now, this endpoint is open for testing.
+        //[IgnoreAntiforgeryToken]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             try
             {
                 if (!ModelState.IsValid)
+                {
                     return BadRequest(ModelState);
+                }
+
 
                 var user = await _context.Employees.FirstOrDefaultAsync(u => u.Email == model.Email && u.Password == model.Password);
 

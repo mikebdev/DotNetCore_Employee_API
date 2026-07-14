@@ -11,6 +11,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+
+
+// Cross-Origin Resource Sharing (CORS) configuration to allow requests from Angular frontend running on localhost:4200 and others as needed.
+builder.Services.AddCors(opt =>
+{ 
+ opt.AddPolicy("CorsPolicy", policy =>
+    {
+        //policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200");
+        policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin(); // Allow any origin for testing purposes, you can restrict it to specific origins in production.
+    });
+});
+
+
+
 builder.Services.AddDbContext<EmployeeDbContext>(opt=>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("EmployeeConnection")));
 
@@ -53,7 +67,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("CorsPolicy"); // Apply the CORS policy to the request pipeline
 app.UseAuthorization();
 
 app.MapControllers();
