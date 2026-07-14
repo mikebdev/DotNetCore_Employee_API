@@ -10,3 +10,6 @@ Accept: application/json
 
 ###
 
+POST {{Employee.API_HostAddress}}/api/EmployeeMaster/login
+Accept: application/json
+
