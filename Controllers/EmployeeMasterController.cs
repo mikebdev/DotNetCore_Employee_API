@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace Employee.API.Controllers
 {
@@ -18,7 +22,17 @@ namespace Employee.API.Controllers
             _context = context;
         }
 
-        // GET: api/Employee?pageNumber=1&pageSize=10&sortBy=Name&sortDesc=false
+
+        #region GetAllEmployees
+        /// <summary>
+        /// TEST URL: https://localhost:7004/api/EmployeeMaster
+        /// GET: api/Employee?pageNumber=1&pageSize=10&sortBy=Name&sortDesc=false
+        /// </summary>
+        /// <param name="pageNumber"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="sortDesc"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<IActionResult> GetAll(
             int pageNumber = 1,
@@ -62,6 +76,7 @@ namespace Employee.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while fetching employees.", error = ex.Message });
             }
         }
+        #endregion
 
         // GET: api/Employee/5
         [HttpGet("{id}")]
@@ -223,8 +238,7 @@ namespace Employee.API.Controllers
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost("login")]
-        //[AllowAnonymous] //JWT, Oauth, OpenConnect can be implemented later for security. For now, this endpoint is open for testing.
-        //[IgnoreAntiforgeryToken]
+         //JWT, Oauth, OpenConnect can be implemented later for security. For now, this endpoint is open for testing.
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             try
@@ -284,6 +298,31 @@ namespace Employee.API.Controllers
             }
         }
         #endregion
+
+
+
+        //private string GenerateJwtToken(User user)
+        //{
+        //    var claims = new[]
+        //    {
+        //new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        //new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        //new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        //    };
+
+        //    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+        //    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        //    var token = new JwtSecurityToken(
+        //        issuer: _config["Jwt:Issuer"],
+        //        audience: _config["Jwt:Audience"],
+        //        claims: claims,
+        //        expires: DateTime.UtcNow.AddHours(2),
+        //        signingCredentials: creds
+        //    );
+
+        //    return new JwtSecurityTokenHandler().WriteToken(token);
+        //}
 
 
 
