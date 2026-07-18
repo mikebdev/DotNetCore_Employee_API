@@ -40,14 +40,26 @@ namespace Employee.API.Controllers
         [HttpPost("AddDepartment")]
         public IActionResult AddDepartment([FromBody] Department department)
         {
-            if (_context.Departments.Any(d => d.DepartmentName.ToLower() == department.DepartmentName.ToLower()))
-                return Conflict("A department with that name already exists.");
+            //
+            //if (_context.Departments.Any(d => d.DepartmentName.ToLower() == department.DepartmentName.ToLower()))
+            //    return Conflict("A department with that name already exists.");
+
+            bool exists = _context.Departments.Any(d => d.DepartmentName.ToLower() == department.DepartmentName.ToLower());
+
+            if (exists)
+            {
+                return BadRequest("A department with that name already exists.");
+            }
+
 
             _context.Departments.Add(department);
             _context.SaveChanges();
-            return Ok("Department Added Successfully");
+            return Created("Department Added Successfully", department);
             //return Ok(department); // could return inserted ID here.
         }
+
+
+
 
         /// <summary>
         /// TEST URL: https://localhost:7004/api/DepartmentMaster/
@@ -67,9 +79,12 @@ namespace Employee.API.Controllers
             existingDepartment.DepartmentName = department.DepartmentName;
             existingDepartment.IsActive = department.IsActive;
             _context.SaveChanges();
-            return Ok("Department Updated Successfully");
+            return Created("Department Updated Successfully", department);
 
         }
+
+
+
 
         /// <summary>
         /// TEST URL: https://localhost:7004/api/DepartmentMaster/
@@ -85,7 +100,7 @@ namespace Employee.API.Controllers
 
             _context.Departments.Remove(existingDepartment);
             _context.SaveChanges();
-            return Ok("Department Deleted Successfully");
+            return Created("Department Deleted Successfully", existingDepartment);
         }
 
 
