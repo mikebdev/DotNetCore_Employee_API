@@ -18,11 +18,11 @@ namespace Employee.API.Controllers
         }
 
 
-
+        #region Get All Departments
         /// <summary>
-        /// TEST URL: https://localhost:7004/api/DepartmentMaster/GetAllDepartments
+        /// Get All Department
+        /// TEST URL: hostAddress/api/DepartmentMaster/etAllDepartments
         /// </summary>
-        /// <param></param>
         /// <returns></returns>
         [HttpGet("GetAllDepartments")]
         public IActionResult GetDepartments()
@@ -30,13 +30,16 @@ namespace Employee.API.Controllers
             var deptList = _context.Departments.ToList();
             return Ok(deptList);
         }
+        #endregion
 
+
+        #region Add Department
         /// <summary>
-        /// TEST URL: https://localhost:7004/api/DepartmentMaster/    
+        /// Add Department
+        /// TEST URL: hostAddress/api/DepartmentMaster/AddDepartment
         /// </summary>
         /// <param name="department"></param>
         /// <returns></returns>
-
         [HttpPost("AddDepartment")]
         public IActionResult AddDepartment([FromBody] Department department)
         {
@@ -57,16 +60,16 @@ namespace Employee.API.Controllers
             return Created("Department Added Successfully", department);
             //return Ok(department); // could return inserted ID here.
         }
+        #endregion
 
 
-
-
+        #region Update Department
         /// <summary>
-        /// TEST URL: https://localhost:7004/api/DepartmentMaster/
+        /// Update Department
+        /// TEST URL: hostAddress/api/DepartmentMaster/UpdateDepartment
         /// </summary>
-        /// <param name="department"></param>
+        /// <param="department"></param>
         /// <returns></returns>
-
         [HttpPut("UpdateDepartment")]
         public IActionResult UpdateDepartment([FromBody] Department department)
         {
@@ -82,12 +85,13 @@ namespace Employee.API.Controllers
             return Created("Department Updated Successfully", department);
 
         }
+        #endregion
 
 
-
-
+        #region Delete Department
         /// <summary>
-        /// TEST URL: https://localhost:7004/api/DepartmentMaster/
+        /// Delete Department by ID
+        /// TEST URL: hostAddress/api/DepartmentMaster/id 
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -102,7 +106,7 @@ namespace Employee.API.Controllers
             _context.SaveChanges();
             return Created("Department Deleted Successfully", existingDepartment);
         }
-
+        #endregion
 
     }
 }
