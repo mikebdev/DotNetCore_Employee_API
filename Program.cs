@@ -1,6 +1,7 @@
 using Employee.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using Scalar.AspNetCore;
 
 
 // Simple API with Angular FrontEND, This could be done with repository pattern but keeping it simple.
@@ -55,15 +56,29 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
+// Only works in development
+//SwaggerURL: string = this.hostAddress + 'swagger/index.html';
+//SwaggerJSON: string = this.hostAddress + '/swagger/v1/swagger.json';
+//ScalarURL: string = this.hostAddress + '/scalar';
+//SwaggerURL: https://localhost:7004/swagger/index.html
+//SwaggerJSON:  https://localhost:7004/swagger/v1/swagger.json
+//ScalarURL: https://localhost:7004/scalar
 
 
 var app = builder.Build();
+
+// Enable Swagger
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();

@@ -19,14 +19,29 @@ namespace Employee.API.Controllers
         }
 
 
-
+        #region Get All Designations
         // GET: api/Designation
-        [HttpGet]
+        /// <summary>
+        /// Get All Designations
+        /// TEST URL: hostAddress/api/DesignationMaster/GetAllDesignations
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetAllDesignations")]
         public async Task<IActionResult> GetAll()
         {
             try
             {
-                var designations = await _context.Designations.ToListAsync();
+                // Join with departments to include department name in the result
+                var designations = await (from d in _context.Designations
+                                          join dept in _context.Departments on d.DepartmentId equals dept.DepartmentId
+                                          select new
+                                          {
+                                              d.DesignationId,
+                                              d.DepartmentId,
+                                              d.DesignationName,
+                                              DepartmentName = dept.DepartmentName
+                                          }).ToListAsync();
+
                 return Ok(designations);
             }
             catch (Exception ex)
@@ -34,7 +49,10 @@ namespace Employee.API.Controllers
                 return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
             }
         }
+        #endregion
 
+
+        
         // GET: api/Designation/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -52,6 +70,120 @@ namespace Employee.API.Controllers
                 return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
             }
         }
+
+
+        #region Add Designation
+        /// <summary>
+        /// Add Designation
+        /// TEST URL: hostAddress/api/DesignationMaster/AddDesignation
+        /// </summary>
+        /// <param name="designation"></param>
+        /// <returns></returns>
+        [HttpPost("AddDesignation")]
+        public async Task<IActionResult> Create([FromBody] Designation designation)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+
+                var name = designation?.DesignationName?.Trim();
+                if (string.IsNullOrEmpty(name))
+                {
+                    return BadRequest("DesignationName is required.");
+                }
+
+                if (await _context.Designations.AnyAsync(d => d.DesignationName.ToLower() == name.ToLower()))
+                {
+                    return Conflict("A designation with that name already exists.");
+                }
+
+                _context.Designations.Add(designation);
+                await _context.SaveChangesAsync();
+
+                //return CreatedAtAction(nameof(GetById), new { id = designation.DesignationId }, designation);
+                return Created("Department Added Successfully", designation);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
+            }
+        }
+        #endregion
+
+
+        #region Update Designation
+        /// <summary>
+        /// Update Designation
+        /// TEST URL: hostAddress/api/DesignationMaster/UpdateDesignation
+        /// </summary>
+        /// <param name="designation"></param>
+        /// <returns></returns>
+        [HttpPut("UpdateDesignation")]
+        public async Task<IActionResult> Update( [FromBody] Designation designation)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+  
+                var existingdesignation = _context.Designations.Find(designation.DesignationId);
+
+                if (existingdesignation == null)
+                {
+                    return NotFound("Designation not found");
+                }
+
+                existingdesignation.DesignationId = designation.DesignationId;
+                existingdesignation.DepartmentId = designation.DepartmentId;
+                existingdesignation.DesignationName = designation.DesignationName;
+
+                _context.SaveChanges();
+                return Created("Designation Updated Successfully", designation);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
+            }
+        }
+        #endregion
+
+
+        #region Delete Designation
+        /// <summary>
+        /// Delete Designation by ID
+        /// TEST URL: hostAddress/api/DesignationMaster/DeleteDesignation/id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("DeleteDesignation/{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var designation = await _context.Designations.FindAsync(id);
+                if (designation == null)
+                    return NotFound(new { message = $"Designation with ID {id} not found." });
+
+                _context.Designations.Remove(designation);
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
+            }
+        }
+        #endregion
+
+
+
 
         // GET: api/Designation/filter?departmentId=2&name=manager
         [HttpGet("filter")]
@@ -76,78 +208,9 @@ namespace Employee.API.Controllers
             }
         }
 
-        // POST: api/Designation
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Designation designation)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                if (_context.Designations.Any(d => d.DesignationName.ToLower() == d.DesignationName.ToLower()))
-                    return Conflict("A designation with that name already exists.");
 
 
-                _context.Designations.Add(designation);
-                await _context.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(GetById), new { id = designation.DesignationId }, designation);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
-            }
-        }
-
-        // PUT: api/Designation/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Designation designation)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                if (id != designation.DesignationId)
-                    return BadRequest(new { message = "ID mismatch." });
-
-                var existing = await _context.Designations.FindAsync(id);
-                if (existing == null)
-                    return NotFound(new { message = $"Designation with ID {id} not found." });
-
-                existing.DepartmentId = designation.DepartmentId;
-                existing.DesignationName = designation.DesignationName;
-
-                await _context.SaveChangesAsync();
-                return Ok(existing);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
-            }
-        }
-
-        // DELETE: api/Designation/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
-                var designation = await _context.Designations.FindAsync(id);
-                if (designation == null)
-                    return NotFound(new { message = $"Designation with ID {id} not found." });
-
-                _context.Designations.Remove(designation);
-                await _context.SaveChangesAsync();
-
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
-            }
-        }
     }
 
 
