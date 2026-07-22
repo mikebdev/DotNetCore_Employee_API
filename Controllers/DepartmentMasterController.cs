@@ -21,7 +21,7 @@ namespace Employee.API.Controllers
         #region Get All Departments
         /// <summary>
         /// Get All Department
-        /// TEST URL: hostAddress/api/DepartmentMaster/etAllDepartments
+        /// TEST URL: hostAddress/api/DepartmentMaster/GetAllDepartments
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetAllDepartments")]
