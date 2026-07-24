@@ -65,6 +65,9 @@ builder.Services.AddSwaggerGen(c =>
 //ScalarURL: https://localhost:7004/scalar
 
 
+//TODO: will add apiKEY
+
+
 var app = builder.Build();
 
 // Enable Swagger

@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Employee.API.Controllers
 {
@@ -23,63 +24,60 @@ namespace Employee.API.Controllers
         }
 
 
-        #region GetAllEmployees
+        #region Get All Employees
         /// <summary>
-        /// TEST URL: https://localhost:7004/api/EmployeeMaster
-        /// GET: api/Employee?pageNumber=1&pageSize=10&sortBy=Name&sortDesc=false
+        /// Get All Employees
+        /// TEST URL: hostAddress/api/EmployeeMaster/GetAllEmployees
         /// </summary>
-        /// <param name="pageNumber"></param>
-        /// <param name="pageSize"></param>
-        /// <param name="sortBy"></param>
-        /// <param name="sortDesc"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<IActionResult> GetAll(
-            int pageNumber = 1,
-            int pageSize = 10,
-            string sortBy = "employeeId",
-            bool sortDesc = false)
+        [HttpGet("GetAllEmployees")]
+        public async Task<IActionResult> GetAll()
         {
             try
             {
-                if (pageNumber < 1 || pageSize < 1)
-                    return BadRequest("pageNumber and pageSize must be greater than 0.");
+                var employees = await (from emp in _context.Employees
+                                       join dept in _context.Departments on emp.DepartmentId equals dept.DepartmentId
+                                       join des in _context.Designations on emp.DesignationId equals des.DesignationId
+                                       select new
+                                       {
+                                           emp.EmployeeId,
+                                           emp.Name,
+                                           emp.Password,
+                                           emp.Phone,
+                                           emp.MobilePhone,
+                                           emp.Email,
+                                           emp.Address,
+                                           emp.City,
+                                           emp.State,
+                                           emp.Zipcode,
+                                           emp.DesignationId,
+                                           emp.DepartmentId,
+                                           emp.CreatedDate,
+                                           emp.ModifiedDate,
+                                           emp.Role,
+                                           DesignationName = des.DesignationName,
+                                           DepartmentName = dept.DepartmentName
+                                       }).ToListAsync();
 
-                var query = _context.Employees.AsQueryable();
-
-                query = sortBy.ToLower() switch
-                {
-                    "name" => sortDesc ? query.OrderByDescending(e => e.Name) : query.OrderBy(e => e.Name),
-                    "email" => sortDesc ? query.OrderByDescending(e => e.Email) : query.OrderBy(e => e.Email),
-                    "city" => sortDesc ? query.OrderByDescending(e => e.City) : query.OrderBy(e => e.City),
-                    "createddate" => sortDesc ? query.OrderByDescending(e => e.CreatedDate) : query.OrderBy(e => e.CreatedDate),
-                    _ => sortDesc ? query.OrderByDescending(e => e.EmployeeId) : query.OrderBy(e => e.EmployeeId),
-                };
-
-                var total = await query.CountAsync();
-                var employees = await query
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                return Ok(new
-                {
-                    totalRecords = total,
-                    pageNumber,
-                    pageSize,
-                    totalPages = (int)Math.Ceiling((double)total / pageSize),
-                    data = employees
-                });
+                return Ok(employees);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while fetching employees.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
             }
         }
         #endregion
 
-        // GET: api/Employee/5
-        [HttpGet("{id}")]
+
+
+        #region Get Employee by id
+        /// <summary>
+        /// Get Employee | GET: api/Employee/5
+        /// TEST URL: hostAddress/api/EmployeeMaster/EmployeeGetById
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("EmployeeGetById/{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             try
@@ -95,60 +93,18 @@ namespace Employee.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while fetching the employee.", error = ex.Message });
             }
         }
+        #endregion
 
-        // GET: api/Employee/filter?name=john&city=delhi&designationId=2
-        [HttpGet("filter")]
-        public async Task<IActionResult> Filter(
-            string? name,
-            string? city,
-            string? state,
-            int? designationId,
-            int pageNumber = 1,
-            int pageSize = 10)
-        {
-            try
-            {
-                if (pageNumber < 1 || pageSize < 1)
-                    return BadRequest("pageNumber and pageSize must be greater than 0.");
 
-                var query = _context.Employees.AsQueryable();
 
-                if (!string.IsNullOrWhiteSpace(name))
-                    query = query.Where(e => e.Name.Contains(name));
-
-                if (!string.IsNullOrWhiteSpace(city))
-                    query = query.Where(e => e.City.Contains(city));
-
-                if (!string.IsNullOrWhiteSpace(state))
-                    query = query.Where(e => e.State.Contains(state));
-
-                if (designationId.HasValue)
-                    query = query.Where(e => e.DesignationId == designationId.Value);
-
-                var total = await query.CountAsync();
-                var employees = await query
-                    .OrderBy(e => e.EmployeeId)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                return Ok(new
-                {
-                    totalRecords = total,
-                    pageNumber,
-                    pageSize,
-                    totalPages = (int)Math.Ceiling((double)total / pageSize),
-                    data = employees
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while filtering employees.", error = ex.Message });
-            }
-        }
-
-        // POST: api/Employee
-        [HttpPost]
+        #region Add Employee
+        /// <summary>
+        /// Add Employee
+        /// TEST URL: hostAddress/api/EmployeeMaster/AddEmployee
+        /// </summary>
+        /// <param name="employee"></param>
+        /// <returns></returns>
+        [HttpPost("AddEmployee")]
         public async Task<IActionResult> Create([FromBody] EmployeeL employee)
         {
             try
@@ -169,11 +125,20 @@ namespace Employee.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while creating the employee.", error = ex.Message });
             }
         }
+        #endregion
 
-        // PUT: api/Employee/5
-        [HttpPut("{id}")]
+
+        #region Update Employee
+        /// <summary>
+        /// Add Department
+        /// TEST URL: hostAddress/api/EmployeeMaster/UpdateEmployee
+        /// </summary>
+        /// <param name="employee"></param>
+        /// <returns></returns>
+        [HttpPut("UpdateEmployee")]
         public async Task<IActionResult> Update(int id, [FromBody] EmployeeL employee)
         {
+            // fix this like designations and departments.
             try
             {
                 if (!ModelState.IsValid)
@@ -205,9 +170,19 @@ namespace Employee.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating the employee.", error = ex.Message });
             }
         }
+        #endregion
 
-        // DELETE: api/Employee/5
-        [HttpDelete("{id}")]
+
+
+
+        #region Delete Employee
+        /// <summary>
+        /// Delete Employee by ID
+        /// TEST URL: hostAddress/api/EmployeeMaster/id 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("DeleteEmployee/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -226,7 +201,7 @@ namespace Employee.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while deleting the employee.", error = ex.Message });
             }
         }
-
+        #endregion
 
 
 
@@ -324,6 +299,114 @@ namespace Employee.API.Controllers
         //    return new JwtSecurityTokenHandler().WriteToken(token);
         //}
 
+        // GET: api/Employee/filter?name=john&city=delhi&designationId=2
+        [HttpGet("filter")]
+        public async Task<IActionResult> Filter(
+            string? name,
+            string? city,
+            string? state,
+            int? designationId,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            try
+            {
+                if (pageNumber < 1 || pageSize < 1)
+                    return BadRequest("pageNumber and pageSize must be greater than 0.");
+
+                var query = _context.Employees.AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(name))
+                    query = query.Where(e => e.Name.Contains(name));
+
+                if (!string.IsNullOrWhiteSpace(city))
+                    query = query.Where(e => e.City.Contains(city));
+
+                if (!string.IsNullOrWhiteSpace(state))
+                    query = query.Where(e => e.State.Contains(state));
+
+                if (designationId.HasValue)
+                    query = query.Where(e => e.DesignationId == designationId.Value);
+
+                var total = await query.CountAsync();
+                var employees = await query
+                    .OrderBy(e => e.EmployeeId)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    totalRecords = total,
+                    pageNumber,
+                    pageSize,
+                    totalPages = (int)Math.Ceiling((double)total / pageSize),
+                    data = employees
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while filtering employees.", error = ex.Message });
+            }
+        }
+
+
+
+        #region GetAllEmployees Paging
+        // Might need to change this to work like #region Get All Designations in DesignationMasterController, need drop-downs and all that.
+        /// <summary>
+        /// TEST URL: https://localhost:7004/api/EmployeeMaster
+        /// GET: api/Employee?pageNumber=1&pageSize=10&sortBy=Name&sortDesc=false
+        /// </summary>
+        /// <param name="pageNumber"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="sortDesc"></param>
+        /// <returns></returns>
+        [HttpGet("GetAllEmployeesPaging")]
+        public async Task<IActionResult> GetAllPaging(
+            int pageNumber = 1,
+            int pageSize = 10,
+            string sortBy = "employeeId",
+            bool sortDesc = false)
+        {
+            try
+            {
+                if (pageNumber < 1 || pageSize < 1)
+                    return BadRequest("pageNumber and pageSize must be greater than 0.");
+
+                var query = _context.Employees.AsQueryable();
+
+                query = sortBy.ToLower() switch
+                {
+                    "name" => sortDesc ? query.OrderByDescending(e => e.Name) : query.OrderBy(e => e.Name),
+                    "email" => sortDesc ? query.OrderByDescending(e => e.Email) : query.OrderBy(e => e.Email),
+                    "city" => sortDesc ? query.OrderByDescending(e => e.City) : query.OrderBy(e => e.City),
+                    "createddate" => sortDesc ? query.OrderByDescending(e => e.CreatedDate) : query.OrderBy(e => e.CreatedDate),
+                    _ => sortDesc ? query.OrderByDescending(e => e.EmployeeId) : query.OrderBy(e => e.EmployeeId),
+                };
+
+                var total = await query.CountAsync();
+                var employees = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    totalRecords = total,
+                    pageNumber,
+                    pageSize,
+                    totalPages = (int)Math.Ceiling((double)total / pageSize),
+                    data = employees
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while fetching employees.", error = ex.Message });
+            }
+        }
+        #endregion
 
 
     }
