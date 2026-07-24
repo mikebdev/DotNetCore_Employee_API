@@ -24,6 +24,7 @@ namespace Employee.API.Models
         public string State { get; set; } = string.Empty;
         public string Zipcode { get; set; } = string.Empty;
         public int DesignationId { get; set; }
+        public int DepartmentId { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
         public string Role {  get; set; } = string.Empty;
