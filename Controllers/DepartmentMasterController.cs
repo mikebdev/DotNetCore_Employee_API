@@ -2,6 +2,7 @@
 using Employee.API.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Employee.API.Controllers
 {
@@ -17,7 +18,6 @@ namespace Employee.API.Controllers
             _context = context;
         }
 
-
         #region Get All Departments
         /// <summary>
         /// Get All Department
@@ -25,10 +25,17 @@ namespace Employee.API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetAllDepartments")]
-        public IActionResult GetDepartments()
+        public async Task<IActionResult> GetDepartments()
         {
-            var deptList = _context.Departments.ToList();
-            return Ok(deptList);
+            try
+            {
+                var deptList = await _context.Departments.ToListAsync();
+                return Ok(deptList);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
+            }
         }
         #endregion
 
@@ -41,24 +48,27 @@ namespace Employee.API.Controllers
         /// <param name="department"></param>
         /// <returns></returns>
         [HttpPost("AddDepartment")]
-        public IActionResult AddDepartment([FromBody] Department department)
+        public async Task<IActionResult> AddDepartment([FromBody] Department department)
         {
             //
             //if (_context.Departments.Any(d => d.DepartmentName.ToLower() == department.DepartmentName.ToLower()))
             //    return Conflict("A department with that name already exists.");
 
-            bool exists = _context.Departments.Any(d => d.DepartmentName.ToLower() == department.DepartmentName.ToLower());
-
-            if (exists)
+            var name = department?.DepartmentName?.Trim();
+            if (string.IsNullOrEmpty(name))
             {
-                return BadRequest("A department with that name already exists.");
+                return BadRequest("DepartmentName is required.");
             }
 
 
+            if (await _context.Departments.AnyAsync(d => d.DepartmentName.ToLower() == name.ToLower()))
+            {
+                return Conflict("A Departmen with that name already exists.");
+            }
+
             _context.Departments.Add(department);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return Created("Department Added Successfully", department);
-            //return Ok(department); // could return inserted ID here.
         }
         #endregion
 
@@ -71,20 +81,29 @@ namespace Employee.API.Controllers
         /// <param="department"></param>
         /// <returns></returns>
         [HttpPut("UpdateDepartment")]
-        public IActionResult UpdateDepartment([FromBody] Department department)
+        public async Task<IActionResult> UpdateDepartment([FromBody] Department department)
         {
-            var existingDepartment = _context.Departments.Find(department.DepartmentId);
-            if (existingDepartment == null)
+            try
             {
-                return NotFound("Department not found");
+                var existingDepartment = await _context.Departments.FindAsync(department.DepartmentId);
+
+                if (existingDepartment == null)
+                {
+                    return NotFound("Department not found");
+                }
+
+                existingDepartment.DepartmentId = department.DepartmentId;
+                existingDepartment.DepartmentName = department.DepartmentName;
+                existingDepartment.IsActive = department.IsActive;
+
+                _context.SaveChanges();
+                return Created("Department Updated Successfully", department);
             }
-
-            existingDepartment.DepartmentName = department.DepartmentName;
-            existingDepartment.IsActive = department.IsActive;
-            _context.SaveChanges();
-            return Created("Department Updated Successfully", department);
-
-        }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", detail = ex.Message });
+            }
+       }
         #endregion
 
 
@@ -96,15 +115,24 @@ namespace Employee.API.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("DeleteDepartment/{id}")]
-        public IActionResult DeleteDepartment(int id) {
-            var existingDepartment = _context.Departments.Find(id);
-            if (existingDepartment == null) {
-                return NotFound("Department not Found");
-            }
+        public async  Task<IActionResult> DeleteDepartment(int id)
+        {
+            try
+            {
+                var existingDepartment = await _context.Departments.FindAsync(id);
+                if (existingDepartment == null)
+                {
+                    return NotFound("Department not Found");
+                }
 
-            _context.Departments.Remove(existingDepartment);
-            _context.SaveChanges();
-            return Created("Department Deleted Successfully", existingDepartment);
+                _context.Departments.Remove(existingDepartment);
+                _context.SaveChanges();
+                return Created("Department Deleted Successfully", existingDepartment);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new {message = "An error occured.", detail = $"{ex.Message}" });
+            }
         }
         #endregion
 

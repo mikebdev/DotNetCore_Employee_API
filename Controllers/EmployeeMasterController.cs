@@ -54,7 +54,7 @@ namespace Employee.API.Controllers
                                            emp.DepartmentId,
                                            emp.CreatedDate,
                                            emp.ModifiedDate,
-                                           emp.Role,
+                                           emp.Role, // role should probalby be its own model and have a controller to add remove them.
                                            DesignationName = des.DesignationName,
                                            DepartmentName = dept.DepartmentName
                                        }).ToListAsync();
